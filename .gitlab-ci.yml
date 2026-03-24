@@ -1,0 +1,29 @@
+#++
+#   DESCRIPTION: To autobuild ya MODBUS TCP-2-RTU gateway
+#
+#   AUTHOR: Ruslan R. Laishev (BMF, The BadAss SysMan)
+#
+#   CREATION DATE: 5-NOV-2025
+#
+#   MODIFICATION HISTORY:
+#--
+
+image: gcc
+before_script:
+  - echo "Install prerequisites ..."
+  - apt-get update --yes
+  - apt-get install --yes cmake
+  - apt-get install --yes libconfig-dev
+
+stages:           # List of stages for jobs, and their order of execution
+  - build
+  
+build-job:        # This job runs in the build stage, which runs first.
+  stage: build
+  script:
+                  # Build yaMODBUS gw
+    - git submodule update --init --recursive
+    - echo "Compiling the code..."
+    - cmake ./CMakeLists.txt -DCMAKE_BUILD_TYPE=Debug
+    - make -s
+    - echo "Compile complete."
