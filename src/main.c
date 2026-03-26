@@ -1,6 +1,6 @@
 #define	__MODULE__	"N2S-MAIN"
-#define	__IDENT__	"X.00-03"
-#define	__REV__		"00.00.03"
+#define	__IDENT__	"X.00-04"
+#define	__REV__		"00.00.04"
 
 /*
 **++
@@ -28,7 +28,8 @@
 **
 **  MODIFICATION HISTORY:
 **
-**		26-MAR-2026	RRL	X.00-03: Fixed incorrect handling of EAGAIN
+**		26-MAR-2026	RRL	X.00-04: Fixed incorrect handling of EAGAIN;
+**					improved diagnostic output;
 **
 **--
 */
