@@ -243,6 +243,7 @@ typedef struct	n2s$__session {
 
 		int	sd;						/* Network socket descriptor */
 	struct sockaddr_in sk;						/* Socket address structure */
+		char	ep[64];						/* "aa.bb.cc.dd:port" ASCII string */
 
 		void	*netbuf_dsc,					/* A descriptor of buffer for network I/O */
 			*ttybuf_dsc;					/* A descriptor of buffer for serial I/O */

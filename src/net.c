@@ -63,16 +63,18 @@ char	*l_data;
 
 											/* Read a data from socket */
 	if ( !(l_rc = recv(a_session->sd, l_data, l_rc, MSG_NOSIGNAL)) )
-		return	$LOG(STS$K_WARN, "[#%d] --- peer close connection, errno: %d", a_session->sd, errno);
+		return	$LOG(STS$K_WARN, "[#%d:<%s>] --- peer close connection, errno: %d", a_session->sd,
+			     a_session->ep, errno);
 
 	if ( 0 > l_rc )									/* Check return status */
-		return	$LOG(STS$K_ERROR, "[#%d] --- error during read data, recv()->%d, errno: %d", a_session->sd, l_rc, errno);
+		return	$LOG(STS$K_ERROR, "[#%d] --- error during read data, recv()->%d, errno: %d", a_session->sd,
+			     a_session->ep, l_rc, errno);
 
 
 
 	n2s$_ring_adjfree(a_buf_dsc, l_rc);						/* Adjust ring's buffer internals accorind real received data */
 
-	$IFTRACE(g_trace, "[#%d] Read %d octets", a_session->sd, l_rc);
+	$IFTRACE(g_trace, "[#%d:<%s>] Read %d octets", a_session->sd, a_session->ep, l_rc);
 
 	return	STS$K_SUCCESS;
 }
@@ -92,15 +94,17 @@ char	*l_data;
 		return	STS$K_SUCCESS;
 
 	if ( !(l_rc = send(a_session->sd, l_data, l_rc, MSG_NOSIGNAL)) )
-		return	$LOG(STS$K_WARN, "[#%d] --- peer close connection, errno: %d", a_session->sd, errno);
+		return	$LOG(STS$K_WARN, "[#%d:<%s>] --- peer close connection, errno: %d", a_session->sd,
+			     a_session->ep, errno);
 
 	if ( 0 > l_rc )									/* Check return status */
-		return	$LOG(STS$K_ERROR, "[#%d] --- error during send data, send()->%d, errno: %d", a_session->sd, l_rc, errno);
+		return	$LOG(STS$K_ERROR, "[#%d:<%s>] --- error during send data, send()->%d, errno: %d", a_session->sd,
+			     a_session->ep, l_rc, errno);
 
 
 	n2s$_ring_adjdata(a_buf_dsc, l_rc);						/* Adjust ring's buffer internals */
 
-	$IFTRACE(g_trace, "[#%d] Sent %d octets", a_session->sd, l_rc);
+	$IFTRACE(g_trace, "[#%d:<%s>] Sent %d octets", a_session->sd, a_session->ep, l_rc);
 	//$DUMPHEX(l_data, l_rc);
 
 	return	STS$K_SUCCESS;
@@ -288,6 +292,8 @@ pthread_t	l_tid;
 					l_session->sd = l_sd;
 					l_session->sk = l_sk;
 					l_session->target = g_listeners[i].serial;
+					snprintf(l_session->ep, sizeof(l_session->ep) - 1, "" IPv4_BYTES_FMT ":%d",
+						 IPv4_BYTES(l_sk.sin_addr.s_addr), ntohs(l_sk.sin_port) );
 
 											/* Start dedicated thread for session */
 					if ( l_rc = pthread_create(&l_tid, NULL, s_net_session, l_session) )
