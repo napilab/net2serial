@@ -125,7 +125,7 @@ char	*l_data;
 
 	n2s$_ring_adjdata(a_buf_dsc, l_len),					/* Adjust ring's buffer internals accorind real received data */
 
-	$IFTRACE(g_trace, "[#%d:<%s>] TTY TX %d octets (from %d)", a_serial->fd, a_serial->devname, l_rc, l_len);
+	$IFTRACE(g_trace, "[#%d:<%s>] Send %d octets (from %d)", a_serial->fd, a_serial->devname, l_rc, l_len);
 
 	return	STS$K_SUCCESS;
 }
@@ -155,7 +155,7 @@ char	*l_data;
 	n2s$_ring_adjfree(a_buf_dsc, l_rc);					/* Adjust ring's buffer internals accorind real received data */
 
 
-	$IFTRACE(g_trace, "[#%d:<%s>] TTY RX %d octets", a_serial->fd, a_serial->devname, l_rc);
+	$IFTRACE(g_trace, "[#%d:<%s>] Read %d octets", a_serial->fd, a_serial->devname, l_rc);
 	//$DUMPHEX(l_data, l_rc);
 
 	return	STS$K_SUCCESS;

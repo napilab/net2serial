@@ -72,7 +72,7 @@ char	*l_data;
 
 	n2s$_ring_adjfree(a_buf_dsc, l_rc);						/* Adjust ring's buffer internals accorind real received data */
 
-	$IFTRACE(g_trace, "[#%d] NET RX %d octets", a_session->sd, l_rc);
+	$IFTRACE(g_trace, "[#%d] Read %d octets", a_session->sd, l_rc);
 
 	return	STS$K_SUCCESS;
 }
@@ -100,7 +100,7 @@ char	*l_data;
 
 	n2s$_ring_adjdata(a_buf_dsc, l_rc);						/* Adjust ring's buffer internals */
 
-	$IFTRACE(g_trace, "[#%d] NET TX %d octets", a_session->sd, l_rc);
+	$IFTRACE(g_trace, "[#%d] Sent %d octets", a_session->sd, l_rc);
 	//$DUMPHEX(l_data, l_rc);
 
 	return	STS$K_SUCCESS;
