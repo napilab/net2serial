@@ -98,7 +98,7 @@ char	*l_data;
 
 	n2s$_ring_adjdata(a_buf_dsc, l_rc);						/* Adjust ring's buffer internals */
 
-	$DUMPHEX(l_data, l_rc);
+	//$DUMPHEX(l_data, l_rc);
 
 	return	STS$K_SUCCESS;
 }

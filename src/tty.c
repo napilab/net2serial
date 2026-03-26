@@ -156,7 +156,7 @@ char	*l_data;
 
 
 	$IFTRACE(g_trace, "[#%d:<%s>] Get %d octets", a_serial->fd, a_serial->devname, l_rc);
-	$DUMPHEX(l_data, l_rc);
+	//$DUMPHEX(l_data, l_rc);
 
 	return	STS$K_SUCCESS;
 
