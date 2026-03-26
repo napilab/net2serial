@@ -1,6 +1,6 @@
 #define	__MODULE__	"N2S-MAIN"
-#define	__IDENT__	"X.00-02"
-#define	__REV__		"00.00.02"
+#define	__IDENT__	"X.00-03"
+#define	__REV__		"00.00.03"
 
 /*
 **++
@@ -23,11 +23,12 @@
 **		options:
 **			/TRACE		- enable extensible debug diagnostic output
 **			/LOGFILE	- a file name for the logfile
+**			/LOGSIZE	- a limit of logfile in octets
 **			/SETTINGS	- configuration option for network and serial stuff
 **
 **  MODIFICATION HISTORY:
 **
-**
+**		26-MAR-2026	RRL	X.00-03: Fixed incorrect handling of EAGAIN
 **
 **--
 */
