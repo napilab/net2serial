@@ -181,7 +181,7 @@ static inline void n2s$_ring_adjdata (
 		)
 {
 	a_ring->head = (a_ring->head + a_count) % a_ring->sz;
-	a_ring->fl_full = 0;
+	a_ring->fl_full = 0;						/* Buffer got free space !!! */
 }
 
 

@@ -149,7 +149,8 @@ char	*l_data;
 
 
 	if ( 0 > (l_rc = read(a_serial->fd, l_data, l_rc )) )
-		return	$LOG(STS$K_ERROR, "[#%d:<%s>] Read failed, errno: %d", a_serial->fd, a_serial->devname, errno);
+		return	(l_rc == EAGAIN) ?
+				STS$K_ERROR : $LOG(STS$K_ERROR, "[#%d:<%s>] Read failed, errno: %d", a_serial->fd, a_serial->devname, errno);
 
 	n2s$_ring_adjfree(a_buf_dsc, l_rc);					/* Adjust ring's buffer internals accorind real received data */
 
@@ -157,7 +158,7 @@ char	*l_data;
 	$IFTRACE(g_trace, "[#%d:<%s>] Get %d octets", a_serial->fd, a_serial->devname, l_rc);
 	$DUMPHEX(l_data, l_rc);
 
-	return	STS$K_SUCCESS;;
+	return	STS$K_SUCCESS;
 
 }
 
