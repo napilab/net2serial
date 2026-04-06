@@ -35,9 +35,9 @@ OS-hosted serial device. This  is supposed to be as a tutorial:
 ### 	Build from sources
 
 ```
-$ git clone  https://gitlab.com/SysMan-One/mbus-gw-t2r
+$ git clone  <URL>
 $ cd mbus-gw-t2r
-$ git submodule update --init
+$ git submodule update --init --recursive
 
 $ mkdir build
 $ cd build
@@ -64,13 +64,21 @@ Example:
 
 
 -logfile=/tmp/ttr.log
+##### CLI options
 
-| Option | Format        | Fields  | Description                                                  |
-| ------ | ------------- | ------- | ------------------------------------------------------------ |
+| Option		|  Description
+| ------		| ------------------------------------------------------------
+| trace			| Enable extensible diagnostic output. Useful for for debug and troubleshouting purpose.
+| logfile=\<fpsec\>	| Set a file name to accept logging output
+| logsize=\<number\>	| Limit size of log file.
+| settings=\<fspec\>	| Provide a rin-time configuration for network stuff and serial devices
 
 
-
+##### Settings options
+Check an example of settings file for reference of parameters and rules of configurations
 
 ## Authors and acknowledgment
 
-Developer - Ruslan (AKA : The BadAss SysMan) Laishev, VAX/VMS bigot, BMF.
+Developer: Ruslan (AKA : The BadAss SysMan) Laishev
+VAX/VMS bigot,
+BMF.
