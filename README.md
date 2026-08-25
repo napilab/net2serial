@@ -1,5 +1,9 @@
 # Net-to-Serial
-A yet another gateway pass transparently octets stream over TCP-connection to a Serial port on running this gateway host
+
+*[Русская версия: README_RU.md](README_RU.md)*
+
+A yet another gateway which passes a raw octets stream between a TCP connection and a serial
+port of the host running this gateway.
 
 
 ###	NAPI World
@@ -8,10 +12,10 @@ and is primarily tested on NAPI industrial single-board computers based on Rockc
 
 ####	NAPI Boards
 
-If you are looking for a reliable hardware platform to run modbus_slave in production,
+If you are looking for a reliable hardware platform to run net2serial in production,
 check out the NAPI board lineup:
 
-Welcome to NAPI Wolrd (https://github.com/napilab/napi-boards) for more information!
+Welcome to NAPI World (https://github.com/napilab/napi-boards) for more information!
 
 Right now is available:
 
@@ -23,36 +27,188 @@ Right now is available:
 
 ###	Introduction
 
-A simple TCP-to-Serial (Ethernet-to-Serial, Network-to-Serial) gateway to pass octets stream from remote TCPclinet to a local
-OS-hosted serial device. This  is supposed to be as a tutorial:
+A simple TCP-to-Serial (Ethernet-to-Serial, Network-to-Serial) gateway to pass an octets stream
+from a remote TCP client to a local OS-hosted serial device. Nothing is interpreted: what the
+client types goes to the device as is, what the device prints comes back as is --- so it works
+with a login prompt, with a bootloader and with a binary protocol alike.
 
- - a development of programming skills
- - a programming for I/O on  RS323 and RS-485 ports
- - basic checking of work of MODBUS-capable devices
- - build two-directionional gateways for TCP-to-RTU and RTU-to-TCP
+Typical uses:
+
+ - a console server for the switches, routers, PLCs and the legacy iron
+ - a remote access to the RS-232/RS-485 instruments
+ - a development of programming skills: an I/O on the RS-232 and RS-485 ports
+ - a building block for the two-directional TCP-to-RTU and RTU-to-TCP gateways
 
 
-### 	Build from sources
+###	Main features & advantages
+
+  - a transparent octets stream in the both directions, nothing is interpreted
+  - several serial ports and several TCP ports served by a single process
+  - the flow control disciplines: NONE, XON/XOFF (software), RTS/CTS (hardware)
+  - the RS-232 and the RS-485 specific signaling (the kernel driven direction control)
+  - a single process with a multithreaded architecture: one thread per active session
+  - one client at a time per port: a second client is refused with a clear diagnostic instead
+    of silently interleaving its octets with somebody else's ones
+
+
+###	Reliability, footprint & performance
+
+**No data is lost on the way.** A partial write to a slow serial line advances the ring buffer
+by the really written count, so the tail of a pasted block is never thrown away. The two
+directions are decoupled by a pair of ring buffers, and the requested `poll()` events are
+derived from the state of those buffers at every round --- this gives an honest back pressure
+to whichever side is faster, and no octet is read before there is a room to put it.
+
+**No error is silent.** Every failure produces a coded log message (`%N2S-E-DEVOPNERR`,
+`%N2S-E-LINKDOWN`, `%N2S-W-DEVBUSY`, ...) which names the concrete reason: the failed system
+call, its `errno`, the allowed range of a misconfigured parameter. The log is designed to be
+grepped by the code and to make the troubleshooting a reading exercise, not a guessing one ---
+see the User Guide, Chapter 6.
+
+**No hangs, no busy loops.** A dead serial leg (an unplugged USB adapter) or a broken
+connection is detected via `POLLERR`/`POLLHUP`/`POLLNVAL` and closes the session with a
+diagnostic instead of spinning the CPU. The idle timeout closes only the truly idle sessions:
+any traffic resets it, so an operator working in a console is never dropped mid-sentence.
+
+**Small footprint.** A single process; the only runtime dependency beyond libc is libconfig.
+There are no timers ticking in the background: all the waiting is `poll()`-driven, so an idle
+gateway with a connected client consumes practically zero CPU. One thread exists per *active*
+session only and is released as soon as the client disconnects --- no thread or memory leaks,
+verified by the bundled test bench and by the ASan/UBSan builds. This makes the gateway
+comfortable on the small industrial single-board computers of the NaPi lineup (RK3308,
+RK3568J) --- and on anything larger.
+
+
+###	User Guide
+
+A detailed, beginner-level guide --- the configuration walk-through, the running, the port
+ownership rules, the troubleshooting by the message codes --- is available in two languages:
+
+- English: [docs/UserGuide_EN.md](docs/UserGuide_EN.md) (a printable DEC-styled PDF: [docs/UserGuide_EN.pdf](docs/UserGuide_EN.pdf))
+- Russian: [docs/UserGuide_RU.md](docs/UserGuide_RU.md) (a printable DEC-styled PDF: [docs/UserGuide_RU.pdf](docs/UserGuide_RU.pdf))
+
+The PDFs are generated by `docs/make_userguide_pdf.py` (the reportlab set, the DejaVu fonts).
+After `make install` all four are also in `/usr/local/share/doc/net2serial/`.
+
+
+###	Who this project is for
+
+Beyond its direct duty, this project is offered as a piece of readable engineering. It can be
+recommended to students who are learning industrial programming: the whole thing is small
+enough to be read end to end in an evening, yet it is a real production tool --- the serial line
+disciplines, the poll() driven event loops, the ring buffers, the configuration validation, the
+coded diagnostics and the graceful shutdown are all here, in their natural habitat rather than
+in a textbook exercise.
+
+It is also offered to the experienced programmers who have not yet forgotten the engineering
+culture of the Digital Equipment Corporation universe: the module headers with the IDENT/REV
+pair and the revision history, the condition codes checked on the low bit, the facility-coded
+messages, the FAO-styled logging, the routines which return a status and deliver their values
+through the output parameters. If that list reads like a homecoming rather than an oddity ---
+this code was written for you.
+
+###	Installation
+
+The gateway depends on two packages: **libconfig** (a settings file parser, is taken from the
+distro) and **StarLet** (the UTILITY$ROUTINES set, is installed from sources as a CMake package).
+The whole sequence from a bare system to a running gateway is:
+
+####	Step 1. Install the build prerequisites
 
 ```
-$ git clone  https://gitlab.com/SysMan-One/mbus-gw-t2r
-$ cd mbus-gw-t2r
-$ git submodule update --init
-
-$ mkdir build
-$ cd build
-$ cmake ../CMakeLists.txt -B ./
+$ sudo apt install build-essential cmake pkg-config libconfig-dev
 ```
- or
+(on RPM-based distros: `sudo dnf install gcc make cmake pkgconf libconfig-devel`)
+
+####	Step 2. Install the StarLet package
 
 ```
-$ cmake ../CMakeLists.txt -DCMAKE_BUILD_TYPE=Debug -B ./
+$ git clone https://gitlab.com/SysMan-One/utility_routines
+$ cd utility_routines
+$ mkdir build && cd build
+$ cmake ../ -DCMAKE_BUILD_TYPE=Release
+$ make -s
+$ sudo cmake --install .
+```
+
+The package is put under `/usr/local`: the `libstarlet` library, the public headers and the
+CMake package configuration (`find_package(StarLet)` becomes available). To install to another
+prefix use `sudo cmake --install . --prefix /opt/starlet` and then pass
+`-DCMAKE_PREFIX_PATH=/opt/starlet` to the gateway's cmake at the Step 3.
+
+####	Step 3. Build the gateway
+
+```
+$ git clone <URL of repo>
+$ cd net2serial
+$ mkdir build && cd build
+$ cmake ../ -DCMAKE_BUILD_TYPE=Release
 $ make -s
 ```
 
+Build types: `Release` (production), `Debug` (symbols, tracing), `Asan` (address/UB sanitizers
+for the development).
+
+####	Building against musl (OpenWrt, Alpine, embedded rootfs)
+
+The gateway builds and runs against the **musl** C library as well --- this is the usual case
+for OpenWrt and Alpine based images on the industrial boards. A toolchain file is bundled:
+
+```
+$ cmake ../ -DCMAKE_TOOLCHAIN_FILE=../cmake/musl.cmake -DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_PREFIX_PATH=<musl prefix>
+$ make -s
+```
+
+The dependencies (StarLet and libconfig) have to be built for musl too and installed into that
+prefix; point `PKG_CONFIG_LIBDIR` at its `lib/pkgconfig` so that the musl libconfig is picked up
+instead of the host one.
+
+One musl specific detail, handled by the toolchain file: musl ships its own headers but not the
+kernel ones (`linux/serial.h`, `asm/ioctls.h`), so the kernel header directories are appended
+with `-idirafter` --- this way the musl headers always win and `/usr/include` is consulted only
+for what musl does not provide. A plain `-I` would poison the build with the glibc headers.
+
+####	Step 4. Install the gateway
+
+```
+$ sudo make install
+```
+
+What goes where:
+
+| What | Where |
+|------|-------|
+| `net2serial` binary | `/usr/local/sbin/` |
+| Configuration files | `/usr/local/etc/net2serial/` |
+| Docs and reference copies of the configs | `/usr/local/share/doc/net2serial/` |
+
+The configuration files are installed **only when they are absent**: a repeated `make install`
+(an upgrade) never overwrites the has been tuned working configuration --- such files are
+reported as `Keeping the existing ...`.
+
+####	Step 5. Tune the configuration and run
+
+```
+$ sudo vi /usr/local/etc/net2serial/net2serial_settings.conf
+$ /usr/local/sbin/net2serial /settings=/usr/local/etc/net2serial/net2serial_settings.conf
+```
+
+####	Uninstallation
+
+```
+$ cd net2serial/build
+$ sudo make uninstall
+```
+
+Everything which has been put by `make install` is removed, except the configuration files
+under `etc/net2serial/` --- the has been tuned working configuration always survives.
+
+
 ### 	Quick configuration
 
-A configuration option is a single line text string  starting with "-" or "/",  option case is not matter :
+A configuration option is a single line text string starting with "-" or "/", option case is
+not matter:
 
 `/<option_name>=<option_value>`
 
@@ -62,15 +218,36 @@ or
 
 Example:
 
+`-logfile=/tmp/net2serial.log`
 
--logfile=/tmp/ttr.log
+##### CLI options
 
-| Option | Format        | Fields  | Description                                                  |
-| ------ | ------------- | ------- | ------------------------------------------------------------ |
+| Option		|  Description
+| ------		| ------------------------------------------------------------
+| trace			| Enable extensible diagnostic output. Useful for debug and troubleshooting purpose.
+| logfile=\<fspec\>	| Set a file name to accept logging output
+| logsize=\<number\>	| Limit size of log file.
+| settings=\<fspec\>	| Provide a run-time configuration for network stuff and serial devices
 
 
+##### Settings options
+Check an example of settings file for reference of parameters and rules of configurations,
+or read the User Guide (Chapter 3) --- every key is described there with its allowed range.
+
+
+###	Testing
+
+A self-contained functional bench is bundled: it creates a pty pair, runs a fake serial device,
+starts the gateway and checks the round trip, the 60000 octets bulk transfer (the partial write
+path), the port ownership, the idle CPU consumption and the absence of the thread leaks.
+
+```
+$ python3 tests/bench.py ./build/net2serial
+```
 
 
 ## Authors and acknowledgment
 
-Developer - Ruslan (AKA : The BadAss SysMan) Laishev, VAX/VMS bigot, BMF.
+StarLet Squad and Ruslan R. Laishev (AKA: BadAss sysman)
+VAX/VMS bigot,
+BMF.
