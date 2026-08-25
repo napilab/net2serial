@@ -118,25 +118,9 @@ The whole sequence from a bare system to a running gateway is:
 ```
 $ sudo apt install build-essential cmake pkg-config libconfig-dev
 ```
-(on RPM-based distros: `sudo dnf install gcc make cmake pkgconf libconfig-devel`)
-
-####	Step 2. Install the StarLet package
-
-```
-$ git clone https://gitlab.com/SysMan-One/utility_routines
-$ cd utility_routines
-$ mkdir build && cd build
-$ cmake ../ -DCMAKE_BUILD_TYPE=Release
-$ make -s
-$ sudo cmake --install .
-```
-
-The package is put under `/usr/local`: the `libstarlet` library, the public headers and the
-CMake package configuration (`find_package(StarLet)` becomes available). To install to another
-prefix use `sudo cmake --install . --prefix /opt/starlet` and then pass
-`-DCMAKE_PREFIX_PATH=/opt/starlet` to the gateway's cmake at the Step 3.
-
-####	Step 3. Build the gateway
+$ git clone  <URL>
+$ cd mbus-gw-t2r
+$ git submodule update --init --recursive
 
 ```
 $ git clone <URL of repo>
@@ -230,12 +214,15 @@ Example:
 | settings=\<fspec\>	| Provide a run-time configuration for network stuff and serial devices
 
 
-##### Settings options
-Check an example of settings file for reference of parameters and rules of configurations,
-or read the User Guide (Chapter 3) --- every key is described there with its allowed range.
+-logfile=/tmp/ttr.log
+##### CLI options
 
-
-###	Testing
+| Option		|  Description
+| ------		| ------------------------------------------------------------
+| trace			| Enable extensible diagnostic output. Useful for for debug and troubleshouting purpose.
+| logfile=\<fpsec\>	| Set a file name to accept logging output
+| logsize=\<number\>	| Limit size of log file.
+| settings=\<fspec\>	| Provide a rin-time configuration for network stuff and serial devices
 
 A self-contained functional bench is bundled: it creates a pty pair, runs a fake serial device,
 starts the gateway and checks the round trip, the 60000 octets bulk transfer (the partial write
@@ -245,9 +232,11 @@ path), the port ownership, the idle CPU consumption and the absence of the threa
 $ python3 tests/bench.py ./build/net2serial
 ```
 
+##### Settings options
+Check an example of settings file for reference of parameters and rules of configurations
 
 ## Authors and acknowledgment
 
-StarLet Squad and Ruslan R. Laishev (AKA: BadAss sysman)
+Developer: Ruslan (AKA : The BadAss SysMan) Laishev
 VAX/VMS bigot,
 BMF.
